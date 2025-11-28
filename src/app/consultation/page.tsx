@@ -295,10 +295,10 @@ export default function Consultation() {
       cell: (row: Consultation) => {
         const dob = row?.dateOfBirth
           ? moment(row.dateOfBirth).format("DD/MM/YYYY")
-          : "N/A";
+          : "-";
         const tob = row?.timeOfBirth
           ? moment(row.timeOfBirth, "HH:mm").format("hh:mm A")
-          : "N/A";
+          : "-";
         const value = `${dob} / ${tob}`;
 
         return (
@@ -313,7 +313,7 @@ export default function Consultation() {
     {
       name: "POB",
       cell: (row: Consultation) => {
-        const value = row?.placeOfBirth || "N/A";
+        const value = row?.placeOfBirth || "";
         return (
           <Tooltip title={value}>
             <span className="truncate block w-full">{value}</span>
@@ -326,7 +326,7 @@ export default function Consultation() {
     {
       name: "Date",
       selector: (row: Consultation) =>
-        row?.date ? moment(row.date).format("DD/MM/YYYY") : "N/A",
+        row?.date ? moment(row.date).format("DD/MM/YYYY") : "",
       sortable: true,
       width: "120px",
     },
