@@ -85,8 +85,9 @@ interface Filters {
   status: string;
   customerName: string;
   astrologerName: string;
-  startDate: string;
-  endDate: string;
+
+  createdStartDate: string; // Add this
+  createdEndDate: string;
 }
 
 // Deep search function for client-side filtering
@@ -149,19 +150,17 @@ const applyClientFilters = (
       return false;
     }
 
-    // Date range filtering - FIXED: Only filter if dates are provided
-    if (filters.startDate || filters.endDate) {
-      if (!item.date) return false; // Skip items without date
+    // Created date range filtering
+    if (filters.createdStartDate || filters.createdEndDate) {
+      if (!item.createdAt) return false;
 
-      const itemDate = moment(item.date).format("YYYY-MM-DD");
-      
-      // Start date filter
-      if (filters.startDate && itemDate < filters.startDate) {
+      const createdDate = moment(item.createdAt).format("YYYY-MM-DD");
+
+      if (filters.createdStartDate && createdDate < filters.createdStartDate) {
         return false;
       }
-      
-      // End date filter
-      if (filters.endDate && itemDate > filters.endDate) {
+
+      if (filters.createdEndDate && createdDate > filters.createdEndDate) {
         return false;
       }
     }
@@ -180,8 +179,8 @@ export default function Consultation() {
     status: "",
     customerName: "",
     astrologerName: "",
-    startDate: moment().format("YYYY-MM-DD"),
-  endDate: moment().format("YYYY-MM-DD"),
+     createdStartDate: moment().format("YYYY-MM-DD"), 
+  createdEndDate: moment().format("YYYY-MM-DD"), 
   });
 
   const fetchConsultations = async () => {
@@ -196,9 +195,8 @@ export default function Consultation() {
       // Only add filters if they have values
       if (filters.status) queryParams.status = filters.status;
       if (filters.customerName) queryParams.customerName = filters.customerName;
-      if (filters.astrologerName) queryParams.astrologerName = filters.astrologerName;
-      if (filters.startDate) queryParams.startDate = filters.startDate;
-      if (filters.endDate) queryParams.endDate = filters.endDate;
+      if (filters.astrologerName)
+        queryParams.astrologerName = filters.astrologerName;
 
       const query = new URLSearchParams(queryParams);
 
@@ -225,27 +223,25 @@ export default function Consultation() {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchConsultations();
-    }, 300); 
+    }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [filters.status, filters.customerName, filters.astrologerName, filters.startDate, filters.endDate]);
+  }, [
+    filters.status,
+    filters.customerName,
+    filters.astrologerName,
+
+    filters.createdStartDate,
+    filters.createdEndDate,
+  ]);
 
   const handleFilterChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    
-    // Date validation
-    if (name === "startDate" && filters.endDate && value > filters.endDate) {
-      alert("Start date cannot be after end date");
-      return;
-    }
 
-    if (name === "endDate" && filters.startDate && value < filters.startDate) {
-      alert("End date cannot be before start date");
-      return;
-    }
-    
+    // Date validation
+
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -295,10 +291,14 @@ export default function Consultation() {
       width: "130px",
     },
     {
-      name: 'DOB/TOB',
+      name: "DOB/TOB",
       cell: (row: Consultation) => {
-        const dob = row?.dateOfBirth ? moment(row.dateOfBirth).format('DD/MM/YYYY') : 'N/A';
-        const tob = row?.timeOfBirth ? moment(row.timeOfBirth, 'HH:mm').format('hh:mm A') : 'N/A';
+        const dob = row?.dateOfBirth
+          ? moment(row.dateOfBirth).format("DD/MM/YYYY")
+          : "N/A";
+        const tob = row?.timeOfBirth
+          ? moment(row.timeOfBirth, "HH:mm").format("hh:mm A")
+          : "N/A";
         const value = `${dob} / ${tob}`;
 
         return (
@@ -307,7 +307,7 @@ export default function Consultation() {
           </Tooltip>
         );
       },
-      width: '180px'
+      width: "180px",
     },
 
     {
@@ -323,9 +323,10 @@ export default function Consultation() {
       width: "150px",
     },
 
-    { 
-      name: 'Date', 
-      selector: (row: Consultation) => row?.date ? moment(row.date).format('DD/MM/YYYY') : 'N/A',
+    {
+      name: "Date",
+      selector: (row: Consultation) =>
+        row?.date ? moment(row.date).format("DD/MM/YYYY") : "N/A",
       sortable: true,
       width: "120px",
     },
@@ -402,8 +403,9 @@ export default function Consultation() {
       status: "",
       customerName: "",
       astrologerName: "",
-      startDate: "",
-      endDate: "",
+
+      createdStartDate: moment().format("YYYY-MM-DD"), 
+  createdEndDate: moment().format("YYYY-MM-DD"), 
     });
     setSearchText("");
   };
@@ -412,13 +414,15 @@ export default function Consultation() {
     return data.map((item) => ({
       "Astrologer Name": item?.astrologerId?.astrologerName || "N/A",
       "Customer Name": item?.fullName || "N/A",
-      "Email": item?.paymentDetails?.email?.trim() || "N/A",
+      Email: item?.paymentDetails?.email?.trim() || "N/A",
       Mobile: item?.mobileNumber || "N/A",
       Gender: item?.gender || "",
-      "Date of Birth": item?.dateOfBirth ? moment(item.dateOfBirth).format("DD/MM/YYYY") : "N/A",
-      "Time of Birth": item?.timeOfBirth || "N/A",
-      "Place of Birth": item?.placeOfBirth || "N/A",
-      Date: item?.date ? `\t${moment(item.date).format("YYYY-MM-DD")}` : "N/A",
+      "Date of Birth": item?.dateOfBirth
+      ? `\t${moment(item.dateOfBirth).format("DD/MM/YYYY")}` 
+      : "N/A",
+      "Time of Birth": item?.timeOfBirth || "",
+      "Place of Birth": item?.placeOfBirth || "",
+      Date: item?.date ? `\t${moment(item.date).format("DD/MM/YYYY")}` : "N/A",
       "Slot From": item?.slotId?.fromTime || "N/A",
       "Slot To": item?.slotId?.toTime || "N/A",
       "Consultation Type": item?.consultationType || "N/A",
@@ -451,7 +455,7 @@ export default function Consultation() {
                 className="text-gray-800 text-base no-underline flex items-center gap-2 cursor-pointer hover:text-gray-600 transition-colors"
               >
                 <DownloadIcon className="text-gray-600" />
-                Export CSV
+               
               </CSVLink>
             )}
           </div>
@@ -491,43 +495,37 @@ export default function Consultation() {
 
           <input
             type="date"
-            name="startDate"
-            value={filters.startDate}
+            name="createdStartDate"
+            value={filters.createdStartDate}
             onChange={handleFilterChange}
-            max={filters.endDate || undefined}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
 
           <input
             type="date"
-            name="endDate"
-            value={filters.endDate}
+            name="createdEndDate"
+            value={filters.createdEndDate}
             onChange={handleFilterChange}
-            min={filters.startDate || undefined}
+            min={filters.createdStartDate || undefined}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
           />
 
-          <input
-            type="text"
-            placeholder="Search across all fields..."
-            value={searchText}
-            onChange={handleSearch}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-          />
+         
 
-          {(filters.status ||
-            filters.customerName ||
-            filters.astrologerName ||
-            filters.startDate ||
-            filters.endDate ||
-            searchText) && (
-            <button
-              onClick={handleClearFilters}
-              className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md text-sm transition-colors"
-            >
-              Clear All
-            </button>
-          )}
+         <button
+  onClick={handleClearFilters}
+  className={`px-3 py-2 rounded-md text-sm transition-colors ${
+    filters.status || filters.customerName || filters.astrologerName || 
+    filters.createdStartDate || filters.createdEndDate || searchText
+      ? "bg-gray-200 hover:bg-gray-300 text-gray-700"
+      : "bg-gray-100 text-gray-400 cursor-not-allowed"
+  }`}
+  disabled={!filters.status && !filters.customerName && !filters.astrologerName && 
+            !filters.createdStartDate && !filters.createdEndDate && !searchText}
+>
+  Clear All
+</button>
+          
         </div>
       </div>
 
